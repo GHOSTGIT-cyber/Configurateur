@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test — Section 4 : Front Wing & Stab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== VARIABLES (copie de configurator.css) ===== */
+:root {
+    --primary: #1DC6C8;
+    --primary-dark: #17a8aa;
+    --primary-light: #e6fafa;
+    --primary-glow: rgba(29, 198, 200, 0.15);
+    --accent: #15b5b7;
+    --text-dark: #0f172a;
+    --text-mid: #475569;
+    --text-light: #94a3b8;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --bg-card: #ffffff;
+    --bg-subtle: #f8fafc;
+    --bg-selected: #e6fafa;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-primary: 0 4px 16px rgba(29, 198, 200, 0.22);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--font-body);
+    background: #f4f6f8;
+    color: var(--text-dark);
+    padding: 40px 20px;
+}
+
+/* ===== LAYOUT TEST ===== */
+.test-wrapper {
+    max-width: 520px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== PROGRESS ===== */
+.step-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.progress-dots { display: flex; gap: 6px; align-items: center; }
+.progress-dots .dot {
+    display: inline-block;
+    width: 28px; height: 5px;
+    background: #e2e8f0;
+    border-radius: 99px;
+}
+.progress-dots .dot.done { background: #1DC6C8; }
+.progress-dots .dot.active {
+    background: linear-gradient(90deg, #1DC6C8, #15b5b7);
+    height: 6px;
+}
+.progress-text {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-light);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ===== TITRES ===== */
+.section-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-dark);
+    margin: 0 0 6px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+    text-transform: uppercase;
+}
+.section-subtitle {
+    font-size: 15px;
+    color: var(--text-light);
+    margin: 0 0 20px 0;
+    font-style: italic;
+}
+
+/* ===== SOUS-SECTION (categorie d'aile) ===== */
+.wing-category {
+    margin-bottom: 24px;
+}
+.wing-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.wing-category-label {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid rgba(29,198,200,0.2);
+    border-radius: 99px;
+    padding: 4px 14px;
+}
+.wing-category-desc {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-left: 4px;
+    font-style: italic;
+}
+.wing-category-toggle {
+    margin-left: auto;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+.wing-category-toggle::before {
+    content: '';
+    display: block;
+    width: 7px; height: 7px;
+    border-right: 2px solid var(--text-mid);
+    border-bottom: 2px solid var(--text-mid);
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform 0.2s ease;
+}
+.wing-category.collapsed .wing-category-toggle::before {
+    transform: rotate(-135deg) translateY(-2px);
+}
+.wing-category-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    max-height: 1000px;
+    opacity: 1;
+}
+.wing-category.collapsed .wing-category-body {
+    max-height: 0;
+    opacity: 0;
+}
+.wing-category-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 24px;
+}
+
+/* ===== CARDS OPTIONS ===== */
+.VerticalList { list-style: none; padding: 0; margin: 0; }
+.VerticalList__Item {
+    position: relative;
+    margin-bottom: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+.VerticalList__Item:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-primary);
+    transform: translateY(-2px);
+    background: #fafeff;
+}
+.VerticalList__Item.selected {
+    border-color: var(--primary);
+    border-width: 2px;
+    background: var(--bg-selected);
+    box-shadow: var(--shadow-primary);
+}
+.VerticalList__Item.selected::after {
+    content: '';
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 12px;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-shadow: 0 2px 8px rgba(29,198,200,0.4);
+}
+.VerticalList__Item input[type="radio"] {
+    position: absolute;
+    opacity: 0; pointer-events: none;
+    width: 0; height: 0;
+}
+.VerticalList__Item label {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    cursor: pointer;
+    width: 100%;
+    gap: 12px;
+    padding-right: 30px;
+}
+.option-content { flex: 1; min-width: 0; }
+.option-content h5 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 2px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.1;
+}
+.option-content p {
+    font-size: 13px;
+    color: var(--text-mid);
+    margin: 0;
+    line-height: 1.45;
+}
+.option-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+.option-tag {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: #f1f5f9;
+    color: var(--text-mid);
+    border: 1px solid var(--border);
+}
+.option-tag.tag-expert { background: #fff0f0; color: #c0392b; border-color: #fbd5d5; }
+.option-tag.tag-avance { background: #fff8e6; color: #b07d00; border-color: #f5dfa0; }
+.option-tag.tag-intermediaire { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+.option-tag.tag-debutant { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; }
+.option-tag.tag-inclus { background: var(--primary-light); color: var(--primary-dark); border-color: rgba(29,198,200,0.25); }
+
+.price-diff {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-mid);
+    white-space: nowrap;
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+.VerticalList__Item.selected .price-diff { color: var(--primary); }
+
+/* ===== STAB SUB-SECTION ===== */
+.stab-section {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 2px dashed var(--border);
+}
+.stab-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.stab-title::before {
+    content: '';
+    display: block;
+    width: 14px; height: 3px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+/* ===== AIDE BTN ===== */
+.aide-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid rgba(29,198,200,0.3);
+    border-radius: 99px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 16px;
+    font-family: var(--font-body);
+}
+.aide-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.aide-btn svg { width: 14px; height: 14px; }
+
+/* ===== MODAL AIDE ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 680px;
+    width: 94%;
+    max-height: 88vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+    animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(16px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-mid);
+    line-height: 1;
+}
+.modal-box h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.modal-subtitle {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 20px;
+    font-style: italic;
+}
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.modal-grid-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dark);
+    margin: 16px 0 8px;
+    grid-column: 1 / -1;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--primary);
+}
+.modal-card {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    background: var(--bg-subtle);
+}
+.modal-card h4 {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.modal-card p {
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.4;
+}
+</style>
+</head>
+<body>
+
+<div class="test-wrapper">
+
+    <!-- PROGRESS -->
+    <div class="step-progress">
+        <div class="progress-dots">
+            <span class="dot done"></span>
+            <span class="dot done"></span>
+            <span class="dot done"></span>
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+        <span class="progress-text">Étape 4 / 7</span>
+    </div>
+
+    <h3 class="section-title">Front Wing & Stab</h3>
+    <p class="section-subtitle">Ailes LCS (Lift Connect System) — choisissez votre aile avant et arrière</p>
+
+    <!-- BOUTON AIDE -->
+    <button class="aide-btn" onclick="document.getElementById('aideModal').classList.add('open')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Aide pour choisir son aile avant
+    </button>
+
+    <!-- ======= FRONT WING ======= -->
+
+    <!-- Categorie : LCS Havoc -->
+    <div class="wing-category" id="cat-havoc">
+        <div class="wing-category-header" onclick="toggleCategory('cat-havoc')">
+            <span class="wing-category-label">Havoc LCS</span>
+            <span class="wing-category-desc">Vitesse & agilité — Riders confirmés</span>
+            <div class="wing-category-toggle"></div>
+        </div>
+        <div class="wing-category-body">
+            <ul class="VerticalList">
+                <li class="VerticalList__Item" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="148-havoc">
+                    <label>
+                        <div class="option-content">
+                            <h5>148 Havoc LCS</h5>
+                            <p>Aile compacte ultra-réactive pour riders experts. Vitesse maximale et carving serré en eaux agitées.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-expert">Expert</span>
+                                <span class="option-tag">148 cm²</span>
+                                <span class="option-tag tag-inclus">Inclus LIFTX</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">Inclus</span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="wing-category-divider"></div>
+
+    <!-- Categorie : LCS Camber Pro -->
+    <div class="wing-category" id="cat-camber">
+        <div class="wing-category-header" onclick="toggleCategory('cat-camber')">
+            <span class="wing-category-label">Camber Pro LCS</span>
+            <span class="wing-category-desc">Polyvalence & portance — Tous niveaux</span>
+            <div class="wing-category-toggle"></div>
+        </div>
+        <div class="wing-category-body">
+            <ul class="VerticalList">
+                <li class="VerticalList__Item selected" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="210-camber" checked>
+                    <label>
+                        <div class="option-content">
+                            <h5>210 Camber Pro LCS</h5>
+                            <p>Aile haute performance. Portance élevée et carving précis à grande vitesse. Idéale eFoil confirmé.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-avance">Avancé</span>
+                                <span class="option-tag">210 cm²</span>
+                                <span class="option-tag tag-inclus">Inclus LIFT5</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">Inclus</span>
+                    </label>
+                </li>
+                <li class="VerticalList__Item" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="270-camber">
+                    <label>
+                        <div class="option-content">
+                            <h5>270 Camber Pro LCS</h5>
+                            <p>Grande surface pour une portance maximale. Vitesse de décrochage très faible. Glisse exceptionnelle.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-intermediaire">Intermédiaire</span>
+                                <span class="option-tag">270 cm²</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">+50€</span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="wing-category-divider"></div>
+
+    <!-- Categorie : LCS Glide -->
+    <div class="wing-category collapsed" id="cat-glide">
+        <div class="wing-category-header" onclick="toggleCategory('cat-glide')">
+            <span class="wing-category-label">Glide LCS</span>
+            <span class="wing-category-desc">Stabilité & débutants — Grande portance</span>
+            <div class="wing-category-toggle"></div>
+        </div>
+        <div class="wing-category-body">
+            <ul class="VerticalList">
+                <li class="VerticalList__Item" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="60cm">
+                    <label>
+                        <div class="option-content">
+                            <h5>60cm Glide LCS</h5>
+                            <p>Stabilité maximale pour débuter. Décollage facile à faible vitesse. Idéal premiers rides.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-debutant">Débutant</span>
+                                <span class="option-tag">60 cm</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">Même prix</span>
+                    </label>
+                </li>
+                <li class="VerticalList__Item" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="75cm">
+                    <label>
+                        <div class="option-content">
+                            <h5>75cm Glide LCS</h5>
+                            <p>Bon compromis entre stabilité et réactivité. Pour progresser en confiance.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-intermediaire">Intermédiaire</span>
+                                <span class="option-tag">75 cm</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">+200€</span>
+                    </label>
+                </li>
+                <li class="VerticalList__Item" data-option-category="foil" onclick="selectOption(this, 'foil')">
+                    <input type="radio" name="foil" value="90cm">
+                    <label>
+                        <div class="option-content">
+                            <h5>90cm Glide LCS</h5>
+                            <p>Le plus grand mât pour une glisse ultra-stable. Idéal pour les grandes tailles de board.</p>
+                            <div class="option-meta">
+                                <span class="option-tag tag-debutant">Débutant</span>
+                                <span class="option-tag">90 cm</span>
+                            </div>
+                        </div>
+                        <span class="price-diff">+400€</span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ======= STAB (aile arrière) ======= -->
+    <div class="stab-section">
+        <div class="stab-title">Aile arrière (Stab)</div>
+
+        <!-- Bouton aide stab -->
+        <button class="aide-btn" onclick="document.getElementById('aideStabModal').classList.add('open')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Aide pour choisir son aile arrière
+        </button>
+
+        <!-- Categorie : Glide -->
+        <div class="wing-category" id="cat-stab-glide">
+            <div class="wing-category-header" onclick="toggleCategory('cat-stab-glide')">
+                <span class="wing-category-label">Glide Series</span>
+                <span class="wing-category-desc">Vitesse & glisse</span>
+                <div class="wing-category-toggle"></div>
+            </div>
+            <div class="wing-category-body">
+                <ul class="VerticalList">
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="25-glide">
+                        <label>
+                            <div class="option-content">
+                                <h5>25 Glide</h5>
+                                <p>La plus petite et la plus rapide. Favoris du shop pour la vitesse pure. Incroyable pour le surf.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-expert">Expert</span>
+                                    <span class="option-tag">25 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="32-glide">
+                        <label>
+                            <div class="option-content">
+                                <h5>32 Glide</h5>
+                                <p>Sportif et rapide. Moins de surface et angle inférieur — meilleure glisse et vitesses plus rapides.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-avance">Avancé</span>
+                                    <span class="option-tag">32 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item selected" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="36-glide" checked>
+                        <label>
+                            <div class="option-content">
+                                <h5>36 Glide</h5>
+                                <p>L'étalon-or de la gamme Glide. Grande capacité de virage sans se sentir instable.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-intermediaire">Intermédiaire</span>
+                                    <span class="option-tag">36 cm²</span>
+                                    <span class="option-tag tag-inclus">Inclus LIFT5</span>
+                                </div>
+                            </div>
+                            <span class="price-diff">Inclus</span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="46-glide">
+                        <label>
+                            <div class="option-content">
+                                <h5>46 Glide</h5>
+                                <p>Stabilité maximale. Virages lents pour un ride sûr et plus détendu. Idéal grandes tailles.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-debutant">Débutant</span>
+                                    <span class="option-tag">46 cm²</span>
+                                    <span class="option-tag tag-inclus">Inclus LIFT5 Cruiser</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="wing-category-divider"></div>
+
+        <!-- Categorie : Surf V2 -->
+        <div class="wing-category collapsed" id="cat-stab-surf">
+            <div class="wing-category-header" onclick="toggleCategory('cat-stab-surf')">
+                <span class="wing-category-label">Surf V2</span>
+                <span class="wing-category-desc">Polyvalence surf foil</span>
+                <div class="wing-category-toggle"></div>
+            </div>
+            <div class="wing-category-body">
+                <ul class="VerticalList">
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="38-surf">
+                        <label>
+                            <div class="option-content">
+                                <h5>38 Surf V2</h5>
+                                <p>Notre aile arrière la plus polyvalente. S'accorde bien avec le 150 Surf et les plus grandes tailles.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-intermediaire">Intermédiaire</span>
+                                    <span class="option-tag">38 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="48-surf">
+                        <label>
+                            <div class="option-content">
+                                <h5>48 Surf V2</h5>
+                                <p>La plus grande et la plus stable. S'accorde bien avec les tailles 200 cm² et plus.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-debutant">Débutant</span>
+                                    <span class="option-tag">48 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="wing-category-divider"></div>
+
+        <!-- Categorie : Carve -->
+        <div class="wing-category collapsed" id="cat-stab-carve">
+            <div class="wing-category-header" onclick="toggleCategory('cat-stab-carve')">
+                <span class="wing-category-label">Carve Series</span>
+                <span class="wing-category-desc">Virages serrés — Riders avancés</span>
+                <div class="wing-category-toggle"></div>
+            </div>
+            <div class="wing-category-body">
+                <ul class="VerticalList">
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="26-carve">
+                        <label>
+                            <div class="option-content">
+                                <h5>26 Carve</h5>
+                                <p>La plus sportive de la série Carve. Idéale pour les riders expérimentés en surf foil qui cherchent des virages toujours plus serrés.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-expert">Expert</span>
+                                    <span class="option-tag">26 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="33-carve">
+                        <label>
+                            <div class="option-content">
+                                <h5>33 Carve</h5>
+                                <p>Beaucoup de stabilité dans le virage, virages serrés fiables avec une grande maniabilité.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-avance">Avancé</span>
+                                    <span class="option-tag">33 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="wing-category-divider"></div>
+
+        <!-- Categorie : Flow -->
+        <div class="wing-category collapsed" id="cat-stab-flow">
+            <div class="wing-category-header" onclick="toggleCategory('cat-stab-flow')">
+                <span class="wing-category-label">Flow Series</span>
+                <span class="wing-category-desc">Stabilité avec traînée réduite</span>
+                <div class="wing-category-toggle"></div>
+            </div>
+            <div class="wing-category-body">
+                <ul class="VerticalList">
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="21-flow">
+                        <label>
+                            <div class="option-content">
+                                <h5>21 Flow</h5>
+                                <p>Conçue pour les riders d'un niveau avancé. Les avantages d'un très petit stab sans sacrifier la stabilité.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-expert">Expert</span>
+                                    <span class="option-tag">135 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                    <li class="VerticalList__Item" data-option-category="stab" onclick="selectOption(this, 'stab')">
+                        <input type="radio" name="stab" value="31-flow">
+                        <label>
+                            <div class="option-content">
+                                <h5>31 Flow</h5>
+                                <p>L'efficacité d'un petit stab à la traînée réduite. Fuselage plus long pour une stabilité maximale.</p>
+                                <div class="option-meta">
+                                    <span class="option-tag tag-avance">Avancé</span>
+                                    <span class="option-tag">200 cm²</span>
+                                </div>
+                            </div>
+                            <span class="price-diff"></span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div><!-- /stab-section -->
+
+</div><!-- /test-wrapper -->
+
+
+<!-- MODAL : Aide aile avant -->
+<div class="modal-overlay" id="aideModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('aideModal').classList.remove('open')">×</button>
+        <h2>Choisir son aile avant</h2>
+        <p class="modal-subtitle">Guide de sélection selon votre niveau et style de ride</p>
+
+        <div class="modal-grid">
+            <div class="modal-grid-title">Havoc LCS — Vitesse</div>
+            <div class="modal-card">
+                <h4>148 Havoc LCS</h4>
+                <p>Ultra-compact et réactif. Pour riders experts cherchant vitesse maximale et carving serré.</p>
+            </div>
+
+            <div class="modal-grid-title">Camber Pro LCS — Polyvalence</div>
+            <div class="modal-card">
+                <h4>210 Camber Pro LCS</h4>
+                <p>Haute performance. Portance élevée, carving précis. Le choix des riders confirmés.</p>
+            </div>
+            <div class="modal-card">
+                <h4>270 Camber Pro LCS</h4>
+                <p>Grande surface, portance maximale, décrochage très bas. Glisse exceptionnelle pour intermédiaires.</p>
+            </div>
+
+            <div class="modal-grid-title">Glide LCS — Stabilité</div>
+            <div class="modal-card">
+                <h4>60cm Glide LCS</h4>
+                <p>Stabilité maximale pour débuter. Décollage facile à faible vitesse.</p>
+            </div>
+            <div class="modal-card">
+                <h4>75cm Glide LCS</h4>
+                <p>Compromis entre stabilité et réactivité. Pour progresser en confiance.</p>
+            </div>
+            <div class="modal-card">
+                <h4>90cm Glide LCS</h4>
+                <p>Le mât le plus long. Glisse ultra-stable pour grandes boards.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL : Aide aile arrière -->
+<div class="modal-overlay" id="aideStabModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('aideStabModal').classList.remove('open')">×</button>
+        <h2>Choisir son aile arrière</h2>
+        <p class="modal-subtitle">Guide de sélection selon votre style de ride</p>
+
+        <div class="modal-grid">
+            <div class="modal-grid-title">Glide Series — Vitesse & glisse</div>
+            <div class="modal-card"><h4>25 Glide</h4><p>La plus petite et rapide. Vitesse pure. Incroyable pour le surf. Niveau expert.</p></div>
+            <div class="modal-card"><h4>32 Glide</h4><p>Sportif et rapide. Meilleure glisse et vitesses plus élevées. Niveau avancé.</p></div>
+            <div class="modal-card"><h4>36 Glide</h4><p>L'étalon-or. Grande capacité de virage, stable. Niveau intermédiaire.</p></div>
+            <div class="modal-card"><h4>46 Glide</h4><p>Stabilité maximale, virages lents, ride détendu. Niveau débutant.</p></div>
+
+            <div class="modal-grid-title">Surf V2 — Polyvalence surf</div>
+            <div class="modal-card"><h4>38 Surf V2</h4><p>La plus polyvalente. S'accorde avec le 150 Surf et les grandes tailles.</p></div>
+            <div class="modal-card"><h4>48 Surf V2</h4><p>La plus grande et stable. Parfaite pour les ailes 200 cm² et plus.</p></div>
+
+            <div class="modal-grid-title">Carve Series — Virages serrés</div>
+            <div class="modal-card"><h4>26 Carve</h4><p>La plus sportive. Pour les experts qui cherchent des virages toujours plus serrés.</p></div>
+            <div class="modal-card"><h4>33 Carve</h4><p>Stabilité dans le virage, maniabilité fiable. Niveau avancé.</p></div>
+
+            <div class="modal-grid-title">Flow Series — Traînée réduite</div>
+            <div class="modal-card"><h4>21 Flow</h4><p>Petit stab sans sacrifier la stabilité. Pour riders avancés.</p></div>
+            <div class="modal-card"><h4>31 Flow</h4><p>Fuselage long, traînée réduite, stabilité maximale. Pour riders avancés.</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCategory(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+}
+
+function selectOption(item, group) {
+    // Deselect all in same group
+    document.querySelectorAll('[data-option-category="' + group + '"]').forEach(function(el) {
+        el.classList.remove('selected');
+        el.querySelector('input').checked = false;
+    });
+    // Select clicked
+    item.classList.add('selected');
+    item.querySelector('input').checked = true;
+}
+
+// Fermer modal en cliquant l'overlay
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+});
+</script>
+</body>
+</html>

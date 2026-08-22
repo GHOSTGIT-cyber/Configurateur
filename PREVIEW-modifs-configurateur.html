@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévisu modifs configurateur — LiftFoils</title>
+<style>
+  :root{
+    --teal:#1DC6C8; --teal-d:#12a6a8;
+    --bg:#0d0f11; --card:#16191d; --line:#262b31;
+    --tx:#f3f5f7; --mut:#9aa4ad; --dim:#6b747c;
+    --ok:#2ecc71; --wait:#f1b23e; --bad:#ff5c5c;
+    --imgbg:#f4f5f3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"DM Sans",-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--teal)}
+  header{padding:38px 24px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0f1416,#0d0f11)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  h1{margin:0 0 6px;font-weight:600;font-size:26px;letter-spacing:.01em}
+  .sub{color:var(--mut);font-size:15px;margin:0}
+  .warn{margin:16px auto 0;max-width:1120px;
+    background:rgba(241,178,62,.09);border:1px solid rgba(241,178,62,.35);
+    color:#ffd98a;border-radius:10px;padding:12px 16px;font-size:13.5px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--mut)}
+  .legend b{color:var(--tx);font-weight:600}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.02em}
+  .pill.ok{background:rgba(46,204,113,.14);color:#5be495}
+  .pill.wait{background:rgba(241,178,62,.14);color:#ffcf7a}
+  .model{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:6px;
+    font-size:11px;color:var(--mut);margin-right:5px;letter-spacing:.03em}
+
+  main{padding:30px 0 80px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 24px;margin:0 0 20px;scroll-margin-top:20px}
+  .card-h{display:flex;align-items:flex-start;gap:14px;margin-bottom:4px}
+  .num{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--teal);
+    color:#04211f;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .card-h h2{margin:0;font-size:18.5px;font-weight:600}
+  .card-h .meta{margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .desc{color:var(--mut);font-size:14px;margin:10px 0 18px;max-width:820px}
+  .desc code{background:#0c0e10;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;color:#cfe9e8}
+
+  .ba{display:grid;grid-template-columns:1fr 46px 1fr;gap:0;align-items:center}
+  @media(max-width:640px){.ba{grid-template-columns:1fr;gap:14px}.arrow{transform:rotate(90deg);margin:0 auto}}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .slot{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .slot .tag{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;font-size:12px;border-bottom:1px solid var(--line)}
+  .tag .lbl{font-weight:600;letter-spacing:.03em;text-transform:uppercase;font-size:11px}
+  .tag.before .lbl{color:var(--bad)}
+  .tag.after .lbl{color:var(--ok)}
+  .tag .note{color:var(--dim);font-size:11px}
+  .imgbox{background:var(--imgbg);height:260px;display:flex;align-items:center;justify-content:center;padding:14px}
+  .imgbox.sm{height:220px}
+  .imgbox img{max-width:100%;max-height:100%;object-fit:contain}
+  .arrow{display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:26px}
+  .cap{font-size:12.5px;color:var(--mut);padding:10px 13px;border-top:1px solid var(--line)}
+  .cap b{color:var(--tx);font-weight:600}
+
+  .map{display:grid;grid-template-columns:1fr;gap:10px;max-width:620px}
+  .row{display:flex;align-items:center;gap:12px;background:#0f1214;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .row .front{font-weight:600;color:var(--tx);min-width:150px}
+  .row .to{color:var(--teal);font-size:18px}
+  .row .stab{color:#cfe9e8;font-weight:600}
+  .row .badge-new{margin-left:auto;font-size:11px;font-weight:700;color:#04211f;background:var(--teal);padding:2px 8px;border-radius:999px}
+
+  .opts{display:flex;gap:14px;flex-wrap:wrap}
+  .opt{flex:1 1 240px;background:#0f1214;border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .opt h4{margin:0 0 4px;font-size:14.5px;font-weight:600}
+  .opt p{margin:0;color:var(--dim);font-size:12.5px}
+  .opt .price{margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.03em}
+  .opt .price.old{color:var(--bad);text-decoration:line-through}
+  .opt .price.inc{color:var(--ok)}
+  .opt .price.sup{color:var(--wait)}
+  .foot{max-width:1120px;margin:0 auto;padding:8px 24px 60px;color:var(--dim);font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Configurateur eFoil — prévisu des modifications</h1>
+    <p class="sub">Session dédiée · <b style="color:var(--tx)">8/8 points appliqués</b> · toutes les images sourcées sur liftfoils.com · <b style="color:var(--tx)">rien n'est en ligne</b></p>
+    <div class="legend">
+      <span><span class="pill ok">✔ Appliqué en local</span> = modifié dans les fichiers, prêt à valider</span>
+    </div>
+  </div>
+  <div class="warn">⚠️ Aucun push live. Ces modifications sont uniquement dans la copie locale <code>D:\Configurateur</code>. Validation point par point avant toute mise en ligne.</div>
+</header>
+
+<main class="wrap">
+
+  <!-- 1 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">1</div>
+      <div>
+        <h2>Batterie LIFT5 &amp; LIFT5 F → GEN5 Full Range</h2>
+        <div class="meta"><span class="model">LIFT5</span><span class="model">LIFT5 F</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">La photo affichée était en réalité une <b>GEN4</b> (ancienne génération, boîtier à étiquette WARNING). Remplacée par la vraie <b>GEN5 Full Range</b> (texture diamant) — image officielle liftfoils.com.</p>
+    <div class="ba">
+      <div class="slot">
+        <div class="tag before"><span class="lbl">Avant</span><span class="note">battery-gen5.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/batterie/battery-gen5.png" alt="avant"></div>
+        <div class="cap"><b>GEN4</b> — mauvaise génération</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="slot">
+        <div class="tag after"><span class="lbl">Après</span><span class="note">gen5-fullrange-real.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/batterie/gen5-fullrange-real.png" alt="apres"></div>
+        <div class="cap"><b>GEN5 Full Range</b> — officielle Lift</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">2</div>
+      <div>
+        <h2>Batterie LIFTX → LIFTX Battery</h2>
+        <div class="meta"><span class="model">LIFTX</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Le fichier <code>battery-liftx.jpg</code> était en fait une <b>GEN5</b> (texture diamant) — d'où « le LIFTX affiche la batterie GEN5 ». Remplacé par la vraie <b>LIFTX Battery</b> (texture rainurée, plus fine).</p>
+    <div class="ba">
+      <div class="slot">
+        <div class="tag before"><span class="lbl">Avant</span><span class="note">battery-liftx.jpg</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/batterie/battery-liftx.jpg" alt="avant"></div>
+        <div class="cap"><b>GEN5</b> (mal nommée) — texture diamant</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="slot">
+        <div class="tag after"><span class="lbl">Après</span><span class="note">liftx-battery-real.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/batterie/liftx-battery-real.png" alt="apres"></div>
+        <div class="cap"><b>LIFTX Battery</b> — officielle Lift, texture rainurée</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">3</div>
+      <div>
+        <h2>Aile arrière (stab) auto-sélectionnée selon l'aile avant</h2>
+        <div class="meta"><span class="model">LIFT5</span><span class="model">LIFTX</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Choisir une aile avant sélectionne désormais automatiquement l'aile arrière recommandée (et ouvre sa catégorie). La <b>26 Flow</b>, qui n'existait pas, a été <b>créée</b> dans la série Flow.</p>
+    <div class="map">
+      <div class="row"><span class="front">270 Camber Pro</span><span class="to">→</span><span class="stab">46 Glide</span></div>
+      <div class="row"><span class="front">210 Camber Pro</span><span class="to">→</span><span class="stab">36 Glide</span></div>
+      <div class="row"><span class="front">148 Havoc</span><span class="to">→</span><span class="stab">26 Flow</span><span class="badge-new">NOUVELLE AILE</span></div>
+    </div>
+    <p class="desc" style="margin-top:16px">Défini dans <code>config.js → stabForFoil</code> · logique dans <code>configurator.js → autoSelectStabForFoil()</code> · déclenché au chargement et à chaque changement d'aile avant. L'aile arrière est aussi ajoutée au récap du devis.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">4</div>
+      <div>
+        <h2>Télécommande LIFT5 → Elite Hand Controller</h2>
+        <div class="meta"><span class="model">LIFT5</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Le pack LIFT5 inclut la <b>Elite Hand Controller</b> (coque carbone, écran couleur GPS). Étape « Controller » mise à jour : titre, descriptif et photos. LIFTX / LIFT5 F laissés en standard <i>(à confirmer)</i>.</p>
+    <div class="ba">
+      <div class="slot">
+        <div class="tag before"><span class="lbl">Avant</span><span class="note">Controller_standard.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/controller/Controller_standard.png" alt="avant"></div>
+        <div class="cap"><b>Bluetooth Controller</b> standard</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="slot">
+        <div class="tag after"><span class="lbl">Après</span><span class="note">elite-handcontroller.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/controller/elite-handcontroller.png" alt="apres"></div>
+        <div class="cap"><b>Elite Hand Controller</b> — officielle Lift</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">5</div>
+      <div>
+        <h2>Fast Charger « inclus dans le package »</h2>
+        <div class="meta"><span class="model">LIFT5</span><span class="model">LIFTX</span><span class="model">LIFT5 F</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Le Fast Charger était un accessoire payant (+1 541 €). Il est désormais présenté comme <b>Inclus</b> (coché, verrouillé) — comme la housse et le battery backpack — sur les <b>3</b> configurateurs. Sur LIFT5 F, l'option a été ajoutée (elle n'existait pas).</p>
+    <div class="opts">
+      <div class="opt">
+        <h4>Fast Charger — avant</h4>
+        <p>Charge ultra-rapide • Compatible tous modèles</p>
+        <div class="price old">+1 541 €</div>
+      </div>
+      <div class="opt">
+        <h4>Fast Charger — après</h4>
+        <p>Inclus dans le pack • Charge ultra-rapide</p>
+        <div class="price inc">✔ Inclus</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">6</div>
+      <div>
+        <h2>Photos Battery Backpack — LIFT5 vs LIFTX (distinctes)</h2>
+        <div class="meta"><span class="model">LIFT5</span><span class="model">LIFTX</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Les 2 fichiers locaux étaient le même sac blanc générique. Trouvé les <b>2 vrais backpacks distincts</b> sur liftfoils.com/pages/accessories : le <b>LIFT5</b> (grand sac carré pour batterie Gen5) et le <b>LIFTX</b> (sac à dos roll-top). Chaque configurateur affiche maintenant le bon.</p>
+    <div class="duo">
+      <div class="slot">
+        <div class="tag after"><span class="lbl">LIFT5</span><span class="note">backpack-lift5-gen5.png</span></div>
+        <div class="imgbox sm"><img src="wp-content/themes/atelier-child/configurator/images/batterie/backpack-lift5-gen5.png" alt="backpack lift5"></div>
+        <div class="cap">Battery Backpack <b>LIFT5</b> (Gen5)</div>
+      </div>
+      <div class="slot">
+        <div class="tag after"><span class="lbl">LIFTX</span><span class="note">backpack-liftx.png</span></div>
+        <div class="imgbox sm"><img src="wp-content/themes/atelier-child/configurator/images/batterie/backpack-liftx.png" alt="backpack liftx"></div>
+        <div class="cap">Battery Backpack <b>LIFTX</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">7</div>
+      <div>
+        <h2>Battery Backpack en supplément sur LIFT5 F</h2>
+        <div class="meta"><span class="model">LIFT5 F</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">Sur LIFT5 F, le battery backpack n'est <b>pas inclus</b> : il devient une option payante. Ajouté à l'étape Accessoires (il n'y avait que la housse). Sur LIFT5 / LIFTX il reste inclus.</p>
+    <div class="opts">
+      <div class="opt">
+        <h4>LIFT5 / LIFTX</h4>
+        <p>Battery Backpack • Transport batterie</p>
+        <div class="price inc">✔ Inclus</div>
+      </div>
+      <div class="opt">
+        <h4>LIFT5 F</h4>
+        <p>Battery Backpack • En option</p>
+        <div class="price sup">＋ En supplément</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="card">
+    <div class="card-h">
+      <div class="num">8</div>
+      <div>
+        <h2>Photo du mât LIFT5 F (28" LCS Aluminum 68)</h2>
+        <div class="meta"><span class="model">LIFT5 F</span><span class="pill ok">✔ Appliqué</span></div>
+      </div>
+    </div>
+    <p class="desc">La photo affichée était un mât <b>carbone</b> (fichier mal nommé). Le vrai <b>mât aluminium</b> (gris, logo Lift) a été extrait de la <b>vue éclatée officielle</b> du LIFT5 F sur liftfoils.com, détouré sur fond transparent.</p>
+    <div class="ba">
+      <div class="slot">
+        <div class="tag before"><span class="lbl">Avant (faux)</span><span class="note">2025_28_LCSAluminum68_Side.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/mats/2025_28_LCSAluminum68_Side.png" alt="actuel"></div>
+        <div class="cap">Mât <b>carbone</b> — ne correspond pas</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="slot">
+        <div class="tag after"><span class="lbl">Après</span><span class="note">mast-alu-lift5f.png</span></div>
+        <div class="imgbox"><img src="wp-content/themes/atelier-child/configurator/images/mats/mast-alu-lift5f.png" alt="mat alu"></div>
+        <div class="cap">Vrai mât <b>aluminium</b> LIFT5 F</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="foot">
+  Fichiers modifiés : <code>config.js</code> · <code>configurator.js</code> · <code>ajax-handler.php</code> · <code>template.php</code> · <code>template-liftx.php</code> · <code>template-lift5f.php</code><br>
+  Images ajoutées (officielles liftfoils.com) : <code>gen5-fullrange-real.png</code> · <code>gen5-fullrange-open.png</code> · <code>liftx-battery-real.png</code> · <code>elite-handcontroller.png</code> · <code>backpack-lift5-gen5.png</code> · <code>backpack-liftx.png</code> · <code>mast-alu-lift5f.png</code>
+</div>
+</body>
+</html>
