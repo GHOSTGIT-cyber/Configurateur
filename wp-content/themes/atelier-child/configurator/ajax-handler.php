@@ -40,7 +40,8 @@ function send_lift_quote_email() {
     $to = array(
         'n.pernodet12@gmail.com',
         'bakari06@live.fr',
-        'contact@efoilcotedazur.com'
+        'contact@efoilcotedazur.com',
+        'devis-lift@gmail.com' // boîte dédiée surveillée par le workflow n8n de réponse automatique
     );
     $subject = '📧 Nouvelle demande de devis Lift - ' . ($config['modele'] ?? 'Lift X');
 
