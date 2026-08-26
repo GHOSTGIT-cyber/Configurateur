@@ -886,6 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tel: tel,
             message: message,
             config: {
+                modele_id: currentConfig.modele,
                 modele: CONFIG.labels?.modele?.[currentConfig.modele] || currentConfig.modele,
                 hull: CONFIG.labels?.hull?.[currentConfig.hull] || currentConfig.hull,
                 batterie: CONFIG.labels?.batterie?.[currentConfig.batterie] || currentConfig.batterie,

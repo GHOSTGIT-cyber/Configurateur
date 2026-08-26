@@ -59,6 +59,7 @@ Téléphone : {$client['tel']}
 CONFIGURATION
 ───────────────
 Modèle : {$config['modele']}
+ModeleID : {$config['modele_id']}
 Couleur : {$config['hull']}
 Batterie : {$config['batterie']}
 Aile avant : {$config['foil']}

@@ -1,7 +1,8 @@
 # Réponse automatique aux demandes de devis (n8n)
 
 Objectif : quand un client envoie une demande via le configurateur eFoil, une
-réponse générique est préparée automatiquement, validée par un humain par
+réponse **personnalisée selon le modèle exact choisi** (8 variantes, voir
+`email-templates.md`) est préparée automatiquement, validée par un humain par
 email, puis envoyée au client. Si le client répond ensuite, le message est
 transféré à la boîte contact (`contact@efoilcotedazur.com`).
 
@@ -17,7 +18,11 @@ Cette notification contient déjà tout ce qu'il faut :
 - `Reply-To` n'est PAS celui du client sur cette notification (elle part avec
   les en-têtes du site), mais le corps du mail contient une ligne
   `Email : {email du client}` — c'est cette ligne que le workflow parse pour
-  savoir à qui envoyer la réponse générique.
+  savoir à qui envoyer la réponse.
+- Le corps contient aussi une ligne `ModeleID : {slug}` (ex. `lift-5-44`) —
+  c'est cet identifiant stable, pas le libellé affiché `Modèle : LIFT5 4'4"
+  PRO`, qui sert à choisir le bon texte : le libellé contient des apostrophes
+  et guillemets qui compliquent inutilement le parsing/matching.
 
 Donc dans la boîte dédiée, deux types de mails arrivent :
 1. Les notifications de nouvelle demande (sujet reconnaissable) → à traiter.
@@ -70,24 +75,28 @@ Donc dans la boîte dédiée, deux types de mails arrivent :
 **Branche VRAI (nouvelle demande) :**
 
 ### Node 4 — Set (extraire les infos)
-- `clientEmail` = expression regex sur `{{$json.text}}` :
-  `{{$json.text.match(/Email\s*:\s*(\S+@\S+)/)?.[1]}}`
+- `clientEmail` = `{{$json.text.match(/Email\s*:\s*(\S+@\S+)/)?.[1]}}`
 - `clientNom` = `{{$json.text.match(/Nom\s*:\s*(.+)/)?.[1]}}`
+- `modeleId` = `{{$json.text.match(/ModeleID\s*:\s*(\S+)/)?.[1]}}`
 - `modele` = `{{$json.text.match(/Modèle\s*:\s*(.+)/)?.[1]}}`
 
-### Node 5 — Gmail: Send and Wait for Approval
+### Node 5 — Switch (texte selon `modeleId`)
+- Mode: **Rules**, une sortie par valeur de `modeleId` : `lift-x-43`,
+  `lift-x-48`, `lift-x-52`, `lift-5-44`, `lift-5-49`, `lift-5-54`,
+  `lift-5f-49`, `lift-5f-54`.
+- Chaque sortie va vers un node **Set** qui pose `emailBody` avec le texte
+  correspondant depuis `email-templates.md` (variables `{{clientNom}}` /
+  `{{modele}}` remplacées par une expression n8n).
+- Fallback (aucune règle matchée, ex. nouveau modèle ajouté au configurateur
+  sans template) : `emailBody` = texte générique de secours, à rédiger toi
+  aussi — le workflow ne doit jamais planter faute de template.
+- Tous les Set convergent ensuite vers le même node 6 (merge implicite : ils
+  pointent vers le même node suivant).
+
+### Node 6 — Gmail: Send and Wait for Approval
 - To: ton adresse de validation (email choisi précédemment).
-- Subject: `Valider la réponse à {{$json.clientNom}}`
-- Message: le texte générique pré-rempli, ex. :
-  ```
-  Bonjour {{$json.clientNom}},
-
-  Merci pour votre demande de devis pour le {{$json.modele}}.
-  Nous revenons vers vous sous 24h avec un devis personnalisé.
-
-  Cordialement,
-  L'équipe eFoil Côte d'Azur
-  ```
+- Subject: `Valider la réponse à {{$json.clientNom}} ({{$json.modele}})`
+- Message: `{{$json.emailBody}}` (déjà personnalisé par le Switch).
 - Approval options : **Approve and Disapprove**.
 
 > ⚠️ Il existe des bugs communautaires connus où ce node reste bloqué en
@@ -96,15 +105,15 @@ Donc dans la boîte dédiée, deux types de mails arrivent :
 > **Form Trigger** séparé exposant un bouton Approuver/Modifier — plus
 > verbeux à configurer mais plus fiable.
 
-### Node 6 — IF (approuvé ?)
-- Condition sur la sortie du node 5 (`{{$json.data.approved}}`).
+### Node 7 — IF (approuvé ?)
+- Condition sur la sortie du node 6 (`{{$json.data.approved}}`).
 
 **Branche VRAI :**
 
-### Node 7 — Gmail: Send Message
+### Node 8 — Gmail: Send Message
 - To: `{{$('Set').item.json.clientEmail}}`
-- Subject: `Votre demande de devis Lift`
-- Message: le même texte générique validé.
+- Subject: `Votre demande de devis {{$('Set').item.json.modele}}`
+- Message: `{{$('Set').item.json.emailBody}}` (le texte personnalisé validé).
 
 **Branche FAUX :** rien (ou notifier que ce n'est pas parti).
 
