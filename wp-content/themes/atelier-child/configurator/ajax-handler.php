@@ -17,7 +17,18 @@ function send_lift_quote_email() {
     }
 
     // Récupérer les données
-    $config = isset($_POST['config']) ? $_POST['config'] : array();
+    // Les valeurs de config sont interpolées dans le corps de l'email, qui est
+    // ensuite parsé ligne par ligne par le workflow n8n : on les nettoie donc
+    // comme les champs client (sanitize_text_field supprime aussi les sauts de
+    // ligne, ce qui empêche d'injecter de fausses lignes dans la notification).
+    $config_brut = (isset($_POST['config']) && is_array($_POST['config'])) ? $_POST['config'] : array();
+    $config = array();
+    foreach ($config_brut as $cle => $valeur) {
+        $config[sanitize_key($cle)] = is_array($valeur)
+            ? array_map('sanitize_text_field', $valeur)
+            : sanitize_text_field($valeur);
+    }
+
     $client = array(
         'nom' => sanitize_text_field($_POST['nom'] ?? ''),
         'email' => sanitize_email($_POST['email'] ?? ''),
@@ -45,6 +56,11 @@ function send_lift_quote_email() {
     );
     $subject = '📧 Nouvelle demande de devis Lift - ' . ($config['modele'] ?? 'Lift X');
 
+    // Identifiant stable du modèle (ex. lift-5-44) : c'est lui qui sélectionne
+    // le texte de réponse côté n8n. Absent si une page en cache poste encore
+    // l'ancienne version du formulaire → n8n bascule sur son texte de secours.
+    $modele_id = $config['modele_id'] ?? '';
+
     $message = "
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📧 NOUVELLE DEMANDE DE DEVIS LIFT
@@ -59,7 +75,7 @@ Téléphone : {$client['tel']}
 CONFIGURATION
 ───────────────
 Modèle : {$config['modele']}
-ModeleID : {$config['modele_id']}
+ModeleID : {$modele_id}
 Couleur : {$config['hull']}
 Batterie : {$config['batterie']}
 Aile avant : {$config['foil']}

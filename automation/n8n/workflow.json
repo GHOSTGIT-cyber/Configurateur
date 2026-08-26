@@ -1,0 +1,265 @@
+{
+  "name": "Devis eFoil - reponse avec validation humaine",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "is:unread"
+        },
+        "options": {}
+      },
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "markAsRead",
+        "messageId": "={{ $json.id }}"
+      },
+      "name": "Marquer comme lu",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        60,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-contains",
+              "leftValue": "={{ $('Gmail Trigger').item.json.subject }}",
+              "rightValue": "Nouvelle demande de devis Lift",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Nouvelle demande ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Lit la notification envoyée par le configurateur et choisit le texte du modèle.\n// On relit le mail d'origine via $('Gmail Trigger') car le node \"Marquer comme lu\"\n// a remplacé $json par sa propre sortie.\n//\n// normalize('NFC') : sans ça, un corps aux accents décomposés fait échouer\n// l'extraction de \"Modèle\".\nconst body = ($('Gmail Trigger').item.json.text || '').normalize('NFC');\n\n// Les regex sont ANCRÉES en début de ligne (^ + flag m). Sans l'ancrage, un\n// client dont le nom contient \"Email : pirate@exemple.com\" ferait partir la\n// réponse chez le pirate au lieu du vrai client (testé, la faille est réelle).\nconst grab = (re) => (body.match(re)?.[1] || '').trim();\n\nconst clientEmail = grab(/^Email\\s*:\\s*(\\S+@\\S+)\\s*$/m);\nconst clientNom   = grab(/^Nom\\s*:\\s*(.+)$/m);\nconst modeleId    = grab(/^ModeleID\\s*:\\s*(\\S+)\\s*$/m);\nconst modele      = grab(/^Modèle\\s*:\\s*(.+)$/m);\n\n// ---------------------------------------------------------------------------\n// Un texte par modele. Remplacer chaque placeholder par le vrai texte.\n// Variables disponibles dans le texte : {{nom}} et {{modele}}\n// ---------------------------------------------------------------------------\nconst TEMPLATES = {\n  'lift-x-43': `[A REMPLIR - texte LIFTX 4'3\" : voir email-templates.md]`,\n  'lift-x-48': `[A REMPLIR - texte LIFTX 4'8\" : voir email-templates.md]`,\n  'lift-x-52': `[A REMPLIR - texte LIFTX 5'2\" : voir email-templates.md]`,\n  'lift-5-44': `[A REMPLIR - texte LIFT5 4'4\" PRO : voir email-templates.md]`,\n  'lift-5-49': `[A REMPLIR - texte LIFT5 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5-54': `[A REMPLIR - texte LIFT5 5'4\" CRUISER : voir email-templates.md]`,\n  'lift-5f-49': `[A REMPLIR - texte LIFT5 F 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5f-54': `[A REMPLIR - texte LIFT5 F 5'4\" CRUISER : voir email-templates.md]`\n};\n\nconst FALLBACK = `[A REMPLIR - texte de secours si le modele n'est pas reconnu]`;\n\nconst aTemplate = Object.prototype.hasOwnProperty.call(TEMPLATES, modeleId);\nconst corps = (aTemplate ? TEMPLATES[modeleId] : FALLBACK)\n  .split('{{nom}}').join(clientNom)\n  .split('{{modele}}').join(modele);\n\nif (!clientEmail) {\n  throw new Error('Aucune adresse client trouvee dans la notification : ' + body.slice(0, 200));\n}\n\nreturn {\n  json: {\n    clientEmail,\n    clientNom,\n    modeleId,\n    modele,\n    aTemplate,\n    emailBody: corps,\n    emailSubject: 'Votre configuration ' + (modele || 'Lift') + ' - notre proposition',\n  },\n};\n"
+      },
+      "name": "Preparer la reponse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendAndWait",
+        "sendTo": "VALIDATEUR@a-remplir.com",
+        "subject": "=[Validation] Reponse a {{ $json.clientNom }} - {{ $json.modele }}",
+        "message": "={{ $json.aTemplate ? '' : \"ATTENTION : aucun texte specifique pour ce modele (\" + $json.modeleId + \"), texte de secours utilise.\\n\\n\" }}Destinataire : {{ $json.clientEmail }}\nModele : {{ $json.modele }} ({{ $json.modeleId }})\n\n--- Texte qui sera envoye ---\n\n{{ $json.emailBody }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Demander validation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        760,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-true",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Approuve ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1000,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Preparer la reponse').item.json.clientEmail }}",
+        "subject": "={{ $('Preparer la reponse').item.json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $('Preparer la reponse').item.json.emailBody }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Envoyer au client",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "contact@efoilcotedazur.com",
+        "subject": "=Fwd: {{ $('Gmail Trigger').item.json.subject }}",
+        "emailType": "text",
+        "message": "=Message recu sur la boite devis, transfere automatiquement.\nExpediteur d'origine : {{ $('Gmail Trigger').item.json.from.value[0].address }}\n\n---\n\n{{ $('Gmail Trigger').item.json.text }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Gmail Trigger').item.json.from.value[0].address }}"
+        }
+      },
+      "name": "Transferer au contact",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        520,
+        440
+      ]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Marquer comme lu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marquer comme lu": {
+      "main": [
+        [
+          {
+            "node": "Nouvelle demande ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nouvelle demande ?": {
+      "main": [
+        [
+          {
+            "node": "Preparer la reponse",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Transferer au contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer la reponse": {
+      "main": [
+        [
+          {
+            "node": "Demander validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demander validation": {
+      "main": [
+        [
+          {
+            "node": "Approuve ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approuve ?": {
+      "main": [
+        [
+          {
+            "node": "Envoyer au client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

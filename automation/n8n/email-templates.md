@@ -1,11 +1,32 @@
 # Textes des réponses personnalisées par modèle
 
-Un texte par modèle exact (8 au total). Le workflow n8n choisit le texte via
-un node **Switch** sur `ModeleID` (valeur envoyée par le configurateur, ex.
-`lift-5-44` — voir `ajax-handler.php`).
+Un texte par modèle exact (8 au total), plus un texte de secours. Le workflow
+choisit le texte dans le node **Préparer la réponse** de `workflow.json`, via
+l'objet `TEMPLATES` indexé par `ModeleID` (valeur envoyée par le
+configurateur, ex. `lift-5-44` — voir `ajax-handler.php`).
 
-Variables disponibles dans le texte (remplacées par n8n avant envoi) :
+Variables disponibles dans le texte (remplacées avant envoi) :
 `{{nom}}` (nom du client), `{{modele}}` (libellé complet du modèle).
+
+Ce fichier est la source de référence : une fois les textes rédigés ici,
+reporte-les dans l'objet `TEMPLATES` du node Code.
+
+**Rappel de contexte** : le client a déjà reçu l'accusé de réception
+WordPress (« votre demande a bien été reçue, réponse sous 24h »). Ce texte-ci
+est la réponse détaillée qui suit — pas la peine de répéter l'accusé de
+réception.
+
+---
+
+## Texte de secours
+
+Utilisé si `ModeleID` est absent ou inconnu (nouveau modèle ajouté au
+configurateur sans texte associé). Doit rester valable pour n'importe quel
+modèle.
+
+```
+TODO
+```
 
 ---
 
