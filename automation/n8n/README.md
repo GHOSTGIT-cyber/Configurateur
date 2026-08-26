@@ -30,29 +30,93 @@ Donc dans la boîte dédiée, deux types de mails arrivent :
    (puisque cet email générique part *depuis* la boîte dédiée) → à transférer
    vers `contact@efoilcotedazur.com`.
 
+## 0. Prise en main n8n (si tu ne connais pas l'interface)
+
+n8n est un éditeur visuel : un workflow = une suite de **nodes** (rectangles)
+reliés par des flèches, chaque node fait une action (déclencher, filtrer,
+transformer, envoyer un email...).
+
+- **Ajouter un node** : clic sur le `+` (soit flottant sur le canvas, soit à
+  la sortie d'un node existant en survolant le petit `+` sur la flèche) →
+  taper le nom du node dans la barre de recherche (ex. "Gmail", "IF",
+  "Switch") → cliquer dessus. Il apparaît sur le canvas.
+- **Connecter deux nodes** : cliquer-glisser depuis le petit rond à droite
+  d'un node vers le rond à gauche d'un autre. Une flèche indique le sens du
+  flux de données.
+- **Configurer un node** : double-clic dessus, ça ouvre un panneau à droite
+  avec les champs (Resource, Operation, To, Subject, Message...). Chaque
+  champ peut être une valeur fixe ou une **expression**.
+- **Expressions** : cliquer sur la petite icône `fx` (ou taper directement)
+  à côté d'un champ, entourer le code de `{{ }}`. `{{$json.xxx}}` lit le
+  champ `xxx` de la donnée reçue par ce node. `{{$('NomDuNode').item.json.xxx}}`
+  va chercher une valeur produite plus tôt dans le workflow par un node
+  précis (utile après un Switch/IF qui a plusieurs branches).
+- **Tester un node isolément** : bouton "Execute step" / l'icône ▶ sur le
+  node lui-même (pas besoin de lancer tout le workflow). Le résultat
+  s'affiche dans un panneau en bas — utile pour vérifier qu'une expression
+  regex extrait bien ce qu'on veut avant de brancher la suite.
+- **Tester tout le workflow** : bouton "Execute Workflow" en haut. Pour un
+  Trigger comme Gmail, ça va chercher les derniers emails réels reçus — donc
+  teste avec un vrai email de test envoyé à la boîte dédiée plutôt que
+  d'inventer des données.
+- **Activer le workflow** : bascule "Active" en haut à droite. Tant qu'elle
+  est désactivée, le Trigger ne se déclenche jamais tout seul, seulement
+  via "Execute Workflow" manuel.
+
 ## 1. Déployer n8n sur Coolify
 
-1. Coolify → **New Resource → Services → n8n** (template officiel, pas besoin
-   d'écrire de docker-compose).
-2. Attacher un sous-domaine, ex. `n8n.efoilcotedazur.com` — Coolify gère le
-   certificat SSL automatiquement.
-3. Vérifier les variables d'environnement du service :
-   - `N8N_ENCRYPTION_KEY` : générée automatiquement par Coolify, ne pas
-     changer une fois définie (sinon les credentials existants deviennent
-     illisibles).
-   - `WEBHOOK_URL` : doit être l'URL publique du sous-domaine (indispensable
-     pour que le bouton "Approuver" dans l'email de validation fonctionne).
-4. Démarrer le service, ouvrir l'URL, créer le compte admin n8n.
+Cette étape est faite directement via l'API Coolify (token fourni), pas
+besoin de suivre un tuto manuel — voir le résultat du déploiement dans la
+suite de la conversation. Pour référence si tu dois refaire ça un jour sans
+moi : Coolify → **New Resource → Services → n8n**, attacher un sous-domaine
+(SSL auto via Let's Encrypt), vérifier que `WEBHOOK_URL` correspond bien à
+l'URL publique du sous-domaine (sinon le bouton "Approuver" de l'email de
+validation ne fonctionnera pas), démarrer le service.
 
-## 2. Créer la boîte Gmail dédiée
+## 2. Créer la boîte Gmail dédiée et son credential OAuth2
 
-1. Créer le compte Gmail (ex. `devis-lift@gmail.com`), activer la 2FA.
-2. Dans n8n : **Credentials → New → Gmail OAuth2 API**. Suivre le flow OAuth
-   (nécessite un projet Google Cloud avec l'API Gmail activée — le formulaire
-   de credential n8n donne le lien direct et les redirect URLs à coller dans
-   Google Cloud Console).
-3. Remplacer `devis-lift@gmail.com` par la vraie adresse dans
+1. Créer le compte Gmail (ex. `devis-lift@gmail.com`), activer la 2FA
+   (obligatoire pour la suite).
+2. **Créer un projet Google Cloud** :
+   - Aller sur https://console.cloud.google.com/ (connecté avec le compte
+     Gmail dédié).
+   - En haut, sélecteur de projet → **New Project** → nommer (ex.
+     "efoil-n8n") → **Create**.
+3. **Activer l'API Gmail** :
+   - Menu ☰ → **APIs & Services → Library**.
+   - Chercher "Gmail API" → l'ouvrir → **Enable**.
+4. **Configurer l'écran de consentement OAuth** :
+   - **APIs & Services → OAuth consent screen**.
+   - User Type : **External** (sauf si Google Workspace : **Internal**
+     possible).
+   - Renseigner nom de l'app (ex. "eFoil Devis Bot"), email de support,
+     email de contact développeur → **Save and Continue** sur les écrans
+     suivants (scopes et test users peuvent rester par défaut à ce stade).
+   - Sur l'écran **Test users**, ajouter l'adresse Gmail dédiée elle-même —
+     tant que l'app n'est pas publiée, seuls les comptes listés ici peuvent
+     s'authentifier.
+5. **Créer les identifiants OAuth2** :
+   - **APIs & Services → Credentials → Create Credentials → OAuth client
+     ID**.
+   - Application type : **Web application**.
+   - **Authorized redirect URIs** : dans n8n, ouvrir
+     **Credentials → New → Gmail OAuth2 API**, n8n affiche l'URL de
+     redirection exacte à copier (ressemble à
+     `https://n8n.efoilcotedazur.com/rest/oauth2-credential/callback`) —
+     la coller ici dans Google Cloud, puis **Create**.
+   - Google donne un **Client ID** et un **Client Secret** : les copier dans
+     le formulaire de credential n8n, puis **Connect my account** — ça ouvre
+     une fenêtre Google classique de connexion/autorisation.
+6. Remplacer `devis-lift@gmail.com` par la vraie adresse dans
    `ajax-handler.php` (recherche `boîte dédiée surveillée par le workflow`).
+
+> Tant que l'app Google Cloud est en mode "Testing" (non publiée), le token
+> OAuth expire au bout de 7 jours et il faut se reconnecter dans n8n. Pour
+> un usage permanent, publier l'app (**OAuth consent screen → Publish App**)
+> — Google peut demander une vérification si les scopes sont sensibles,
+> mais le scope Gmail utilisé ici (envoi/lecture) déclenche cette
+> vérification ; en attendant la validation, la reconnexion manuelle tous
+> les 7 jours reste le fallback.
 
 ## 3. Construire le workflow
 
