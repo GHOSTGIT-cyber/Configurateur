@@ -9,7 +9,13 @@ Variables disponibles dans le texte (remplacées avant envoi) :
 `{{nom}}` (nom du client), `{{modele}}` (libellé complet du modèle).
 
 Ce fichier est la source de référence : une fois les textes rédigés ici,
-reporte-les dans l'objet `TEMPLATES` du node Code.
+reporte-les dans l'objet `TEMPLATES` de `build-workflow.py`, puis relance
+`python automation/n8n/build-workflow.py` pour régénérer `workflow.json`.
+
+Ces textes sont des **points de départ**, pas des envois figés : Nico les
+voit pré-remplis sur la page de validation et peut les modifier au cas par
+cas avant l'envoi. Vise donc le texte juste dans 90 % des cas plutôt que le
+texte parfait pour toutes les situations.
 
 **Rappel de contexte** : le client a déjà reçu l'accusé de réception
 WordPress (« votre demande a bien été reçue, réponse sous 24h »). Ce texte-ci

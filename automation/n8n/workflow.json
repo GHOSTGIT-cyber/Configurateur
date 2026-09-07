@@ -1,5 +1,5 @@
 {
-  "name": "Devis eFoil - reponse avec validation humaine",
+  "name": "Devis eFoil - reponse avec page de validation",
   "nodes": [
     {
       "parameters": {
@@ -20,7 +20,7 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.2,
       "position": [
-        -160,
+        -200,
         300
       ]
     },
@@ -34,7 +34,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        60,
+        20,
         300
       ]
     },
@@ -66,44 +66,86 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        280,
+        240,
         300
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Lit la notification envoyée par le configurateur et choisit le texte du modèle.\n// On relit le mail d'origine via $('Gmail Trigger') car le node \"Marquer comme lu\"\n// a remplacé $json par sa propre sortie.\n//\n// normalize('NFC') : sans ça, un corps aux accents décomposés fait échouer\n// l'extraction de \"Modèle\".\nconst body = ($('Gmail Trigger').item.json.text || '').normalize('NFC');\n\n// Les regex sont ANCRÉES en début de ligne (^ + flag m). Sans l'ancrage, un\n// client dont le nom contient \"Email : pirate@exemple.com\" ferait partir la\n// réponse chez le pirate au lieu du vrai client (testé, la faille est réelle).\nconst grab = (re) => (body.match(re)?.[1] || '').trim();\n\nconst clientEmail = grab(/^Email\\s*:\\s*(\\S+@\\S+)\\s*$/m);\nconst clientNom   = grab(/^Nom\\s*:\\s*(.+)$/m);\nconst modeleId    = grab(/^ModeleID\\s*:\\s*(\\S+)\\s*$/m);\nconst modele      = grab(/^Modèle\\s*:\\s*(.+)$/m);\n\n// ---------------------------------------------------------------------------\n// Un texte par modele. Remplacer chaque placeholder par le vrai texte.\n// Variables disponibles dans le texte : {{nom}} et {{modele}}\n// ---------------------------------------------------------------------------\nconst TEMPLATES = {\n  'lift-x-43': `[A REMPLIR - texte LIFTX 4'3\" : voir email-templates.md]`,\n  'lift-x-48': `[A REMPLIR - texte LIFTX 4'8\" : voir email-templates.md]`,\n  'lift-x-52': `[A REMPLIR - texte LIFTX 5'2\" : voir email-templates.md]`,\n  'lift-5-44': `[A REMPLIR - texte LIFT5 4'4\" PRO : voir email-templates.md]`,\n  'lift-5-49': `[A REMPLIR - texte LIFT5 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5-54': `[A REMPLIR - texte LIFT5 5'4\" CRUISER : voir email-templates.md]`,\n  'lift-5f-49': `[A REMPLIR - texte LIFT5 F 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5f-54': `[A REMPLIR - texte LIFT5 F 5'4\" CRUISER : voir email-templates.md]`\n};\n\nconst FALLBACK = `[A REMPLIR - texte de secours si le modele n'est pas reconnu]`;\n\nconst aTemplate = Object.prototype.hasOwnProperty.call(TEMPLATES, modeleId);\nconst corps = (aTemplate ? TEMPLATES[modeleId] : FALLBACK)\n  .split('{{nom}}').join(clientNom)\n  .split('{{modele}}').join(modele);\n\nif (!clientEmail) {\n  throw new Error('Aucune adresse client trouvee dans la notification : ' + body.slice(0, 200));\n}\n\nreturn {\n  json: {\n    clientEmail,\n    clientNom,\n    modeleId,\n    modele,\n    aTemplate,\n    emailBody: corps,\n    emailSubject: 'Votre configuration ' + (modele || 'Lift') + ' - notre proposition',\n  },\n};\n"
+        "jsCode": "// Lit la notification du configurateur, choisit le texte du modele et\n// construit le lien vers la page d'edition.\n//\n// On relit le mail d'origine via $('Gmail Trigger') car le node\n// \"Marquer comme lu\" a remplace $json par sa propre sortie.\n// normalize('NFC') : sans ca, un corps aux accents decomposes fait echouer\n// l'extraction de \"Modele\".\nconst body = ($('Gmail Trigger').item.json.text || '').normalize('NFC');\n\n// Les regex sont ANCREES en debut de ligne (^ + flag m). Sans l'ancrage, un\n// client dont le nom contient \"Email : pirate@exemple.com\" ferait partir la\n// reponse chez le pirate au lieu du vrai client (teste, la faille est reelle).\nconst grab = (re) => (body.match(re)?.[1] || '').trim();\n\nconst clientEmail = grab(/^Email\\s*:\\s*(\\S+@\\S+)\\s*$/m);\nconst clientNom   = grab(/^Nom\\s*:\\s*(.+)$/m);\nconst modeleId    = grab(/^ModeleID\\s*:\\s*(\\S+)$/m);\nconst modele      = grab(/^Mod\\u00e8le\\s*:\\s*(.+)$/m);\n\n// ---------------------------------------------------------------------------\n// Un texte par modele. Remplacer chaque placeholder par le vrai texte.\n// Variables disponibles dans le texte : {{nom}} et {{modele}}\n// ---------------------------------------------------------------------------\nconst TEMPLATES = {\n  'lift-x-43': `[A REMPLIR - texte LIFTX 4'3\" : voir email-templates.md]`,\n  'lift-x-48': `[A REMPLIR - texte LIFTX 4'8\" : voir email-templates.md]`,\n  'lift-x-52': `[A REMPLIR - texte LIFTX 5'2\" : voir email-templates.md]`,\n  'lift-5-44': `[A REMPLIR - texte LIFT5 4'4\" PRO : voir email-templates.md]`,\n  'lift-5-49': `[A REMPLIR - texte LIFT5 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5-54': `[A REMPLIR - texte LIFT5 5'4\" CRUISER : voir email-templates.md]`,\n  'lift-5f-49': `[A REMPLIR - texte LIFT5 F 4'9\" SPORT : voir email-templates.md]`,\n  'lift-5f-54': `[A REMPLIR - texte LIFT5 F 5'4\" CRUISER : voir email-templates.md]`\n};\n\nconst FALLBACK = `[A REMPLIR - texte de secours si le modele n'est pas reconnu]`;\n\nconst aTemplate = Object.prototype.hasOwnProperty.call(TEMPLATES, modeleId);\nconst emailBody = (aTemplate ? TEMPLATES[modeleId] : FALLBACK)\n  .split('{{nom}}').join(clientNom)\n  .split('{{modele}}').join(modele);\n\nif (!clientEmail) {\n  throw new Error('Aucune adresse client trouvee dans la notification : ' + body.slice(0, 200));\n}\n\n// Lien vers la page d'edition servie par le node \"Attendre la validation\".\n// $execution.resumeFormUrl est calcule ICI (node Code) : c'est l'endroit ou\n// n8n le documente comme disponible, alors que sa disponibilite dans une\n// expression de node classique est ambigue selon les sources.\nconst lienEdition = $execution.resumeFormUrl;\n\nreturn {\n  json: {\n    clientEmail,\n    clientNom,\n    modeleId,\n    modele,\n    aTemplate,\n    emailBody,\n    emailSubject: 'Votre configuration ' + (modele || 'Lift') + ' - notre proposition',\n    lienEdition,\n    recapDemande: $('Gmail Trigger').item.json.text || '',\n  },\n};\n"
       },
       "name": "Preparer la reponse",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
+        480,
         180
       ]
     },
     {
       "parameters": {
         "resource": "message",
-        "operation": "sendAndWait",
-        "sendTo": "VALIDATEUR@a-remplir.com",
-        "subject": "=[Validation] Reponse a {{ $json.clientNom }} - {{ $json.modele }}",
-        "message": "={{ $json.aTemplate ? '' : \"ATTENTION : aucun texte specifique pour ce modele (\" + $json.modeleId + \"), texte de secours utilise.\\n\\n\" }}Destinataire : {{ $json.clientEmail }}\nModele : {{ $json.modele }} ({{ $json.modeleId }})\n\n--- Texte qui sera envoye ---\n\n{{ $json.emailBody }}",
-        "approvalOptions": {
-          "values": {
-            "approvalType": "double"
-          }
-        },
+        "operation": "send",
+        "sendTo": "NICO@a-remplir.com",
+        "subject": "=[A valider] Devis {{ $json.modele }} - {{ $json.clientNom }}",
+        "emailType": "text",
+        "message": "=Nouvelle demande de devis a valider.\n\nClient : {{ $json.clientNom }} <{{ $json.clientEmail }}>\nModele : {{ $json.modele }} ({{ $json.modeleId }}){{ $json.aTemplate ? '' : '   /!\\\\ aucun texte specifique pour ce modele, texte de secours utilise' }}\n\n================== RECAP DE LA DEMANDE ==================\n\n{{ $json.recapDemande }}\n\n============ TEXTE QUI SERA ENVOYE AU CLIENT ============\n\nSujet : {{ $json.emailSubject }}\n\n{{ $json.emailBody }}\n\n=========================================================\n\nRien n'est parti pour l'instant. Pour modifier le texte puis envoyer\n(ou annuler), ouvre cette page :\n\n{{ $json.lienEdition }}\n",
         "options": {
           "appendAttribution": false
         }
       },
-      "name": "Demander validation",
+      "name": "Prevenir Nico",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        760,
+        700,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "Valider la reponse au client",
+        "formDescription": "=Demande de {{ $('Preparer la reponse').item.json.clientNom }} ({{ $('Preparer la reponse').item.json.clientEmail }}) - {{ $('Preparer la reponse').item.json.modele }}. Modifie le texte si besoin, puis choisis Envoyer ou Annuler.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sujet du mail",
+              "fieldType": "text",
+              "requiredField": true,
+              "defaultValue": "={{ $('Preparer la reponse').item.json.emailSubject }}"
+            },
+            {
+              "fieldLabel": "Texte du mail",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "defaultValue": "={{ $('Preparer la reponse').item.json.emailBody }}"
+            },
+            {
+              "fieldLabel": "Action",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Envoyer le mail"
+                  },
+                  {
+                    "option": "Annuler"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Attendre la validation",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        920,
         180
       ]
     },
@@ -119,24 +161,23 @@
           "combinator": "and",
           "conditions": [
             {
-              "id": "cond-true",
-              "leftValue": "={{ $json.data.approved }}",
-              "rightValue": "",
+              "id": "cond-equals",
+              "leftValue": "={{ $json['Action'] }}",
+              "rightValue": "Envoyer le mail",
               "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
+                "type": "string",
+                "operation": "equals"
               }
             }
           ]
         },
         "options": {}
       },
-      "name": "Approuve ?",
+      "name": "Envoyer ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1000,
+        1140,
         180
       ]
     },
@@ -145,9 +186,9 @@
         "resource": "message",
         "operation": "send",
         "sendTo": "={{ $('Preparer la reponse').item.json.clientEmail }}",
-        "subject": "={{ $('Preparer la reponse').item.json.emailSubject }}",
+        "subject": "={{ $('Attendre la validation').item.json['Sujet du mail'] }}",
         "emailType": "text",
-        "message": "={{ $('Preparer la reponse').item.json.emailBody }}",
+        "message": "={{ $('Attendre la validation').item.json['Texte du mail'] }}",
         "options": {
           "appendAttribution": false
         }
@@ -156,7 +197,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        1240,
+        1380,
         100
       ]
     },
@@ -177,7 +218,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        520,
+        480,
         440
       ]
     }
@@ -227,25 +268,36 @@
       "main": [
         [
           {
-            "node": "Demander validation",
+            "node": "Prevenir Nico",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Demander validation": {
+    "Prevenir Nico": {
       "main": [
         [
           {
-            "node": "Approuve ?",
+            "node": "Attendre la validation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Approuve ?": {
+    "Attendre la validation": {
+      "main": [
+        [
+          {
+            "node": "Envoyer ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer ?": {
       "main": [
         [
           {
